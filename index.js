@@ -1,9 +1,10 @@
 const express = require('express');
-const uuid = require('uuid')
+const uuid = require('uuid');
+const cors = require('cors');
 
 const app = express();
 app.use(express.json());
-
+app.use(cors());
 
 const users = [];
 
@@ -22,6 +23,20 @@ const checkUserId = (req, res, next) => {
 
 };
 
+const checkNameAndAge = (req, res, next) => {
+    const { name } = req.body;
+    const age = Number(req.body.age)
+    if (!name || typeof name !== "string" || name.trim() === "" || /\d/.test(name)) {
+        return res.status(400).json({ message: "Nome ivalid" });
+    }
+
+    if (!age || typeof age !== "number" || age < 0) {
+        return res.status(400).json({ message: "Idade invalid" });
+    }
+
+    next();
+};
+
 app.get('/users', (req, res) => {
     const { name, age } = req.query
 
@@ -29,15 +44,16 @@ app.get('/users', (req, res) => {
 
 });
 
-app.post('/users', (req, res) => {
-    const { name, age } = req.body
+app.post('/users', checkNameAndAge, (req, res) => {
+    const { name } = req.body
+    const age = Number(req.body.age)
     const user = { id: uuid.v4(), name, age }
     users.push(user)
     return res.status(201).json(user)
 
 });
 
-app.put('/users/:id', checkUserId, (req, res) => {
+app.put('/users/:id', checkUserId, checkNameAndAge, (req, res) => {
     const { id } = req.params
     const { name, age } = req.body
 
@@ -59,7 +75,7 @@ app.delete('/users/:id', checkUserId, (req, res) => {
 
 
 
-app.listen(3000, () => {
-    console.log("Server started on port 3000");
+app.listen(3001, () => {
+    console.log("Server started on port 3001");
 
 });
